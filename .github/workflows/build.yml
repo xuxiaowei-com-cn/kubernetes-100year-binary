@@ -46,15 +46,23 @@ jobs:
       - name: Patch client-go certificate validity to 100 years
         working-directory: kubernetes
         run: |
-          cat ./staging/src/k8s.io/client-go/util/cert/cert.go | grep NotAfter
-          sed -i "s#duration365d \* 10#duration365d * 100#" ./staging/src/k8s.io/client-go/util/cert/cert.go
-          cat ./staging/src/k8s.io/client-go/util/cert/cert.go | grep NotAfter
+          CERT=staging/src/k8s.io/client-go/util/cert/cert.go
+          echo "=== Patch: ${CERT} ==="
+          echo "--- before ---"
+          grep -n NotAfter "${CERT}"
+          sed -i "s#duration365d \* 10#duration365d * 100#" "${CERT}"
+          echo "--- after ---"
+          grep -n NotAfter "${CERT}"
       - name: Patch kubeadm certificate validity to 100 years
         working-directory: kubernetes
         run: |
-          cat ./cmd/kubeadm/app/constants/constants.go | grep CertificateValidity
-          sed -i "s#CertificateValidity \= time\.Hour \* 24 \* 365#CertificateValidity = time.Hour * 24 * 365 * 100#" ./cmd/kubeadm/app/constants/constants.go
-          cat ./cmd/kubeadm/app/constants/constants.go | grep CertificateValidity
+          CONSTANTS=cmd/kubeadm/app/constants/constants.go
+          echo "=== Patch: ${CONSTANTS} ==="
+          echo "--- before ---"
+          grep -n CertificateValidity "${CONSTANTS}"
+          sed -i "s#CertificateValidity = time\.Hour \* 24 \* 365#CertificateValidity = time.Hour * 24 * 365 * 100#" "${CONSTANTS}"
+          echo "--- after ---"
+          grep -n CertificateValidity "${CONSTANTS}"
       - name: Install build dependencies
         run: |
           apt-get update
