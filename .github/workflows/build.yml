@@ -43,6 +43,18 @@ jobs:
       - name: Clone Kubernetes
         run: |
           git clone --branch "$K8S_VERSION" --depth 1 https://github.com/kubernetes/kubernetes.git kubernetes
+      - name: Patch client-go certificate validity to 100 years
+        working-directory: kubernetes
+        run: |
+          cat ./staging/src/k8s.io/client-go/util/cert/cert.go | grep NotAfter
+          sed -i "s#duration365d \* 10#duration365d * 100#" ./staging/src/k8s.io/client-go/util/cert/cert.go
+          cat ./staging/src/k8s.io/client-go/util/cert/cert.go | grep NotAfter
+      - name: Patch kubeadm certificate validity to 100 years
+        working-directory: kubernetes
+        run: |
+          cat ./cmd/kubeadm/app/constants/constants.go | grep CertificateValidity
+          sed -i "s#CertificateValidity \= time\.Hour \* 24 \* 365#CertificateValidity = time.Hour * 24 * 365 * 100#" ./cmd/kubeadm/app/constants/constants.go
+          cat ./cmd/kubeadm/app/constants/constants.go | grep CertificateValidity
       - name: Install build dependencies
         run: |
           apt-get update
