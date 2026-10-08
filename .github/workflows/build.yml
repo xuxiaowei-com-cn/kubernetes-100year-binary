@@ -13,7 +13,7 @@ jobs:
   build:
     name: kubeadm binaries
     runs-on: ubuntu-latest
-    container: golang:1.19.13
+    container: golang:1.24.12
     permissions:
       contents: write
     steps:
@@ -60,9 +60,20 @@ jobs:
           echo "=== Patch: ${CONSTANTS} ==="
           echo "--- before ---"
           grep -n CertificateValidity "${CONSTANTS}"
-          sed -i "s#CertificateValidity = time\.Hour \* 24 \* 365#CertificateValidity = time.Hour * 24 * 365 * 100#" "${CONSTANTS}"
+          sed -i "s#CACertificateValidityPeriod = time\.Hour \* 24 \* 365 \* 10#CACertificateValidityPeriod = time.Hour * 24 * 365 * 100#" "${CONSTANTS}"
+          sed -i "s#\([[:space:]]\)CertificateValidityPeriod = time\.Hour \* 24 \* 365#\1CertificateValidityPeriod = time.Hour * 24 * 365 * 100#" "${CONSTANTS}"
           echo "--- after ---"
           grep -n CertificateValidity "${CONSTANTS}"
+      - name: Patch kubeadm to ignore the configured certificate NotAfter
+        working-directory: kubernetes
+        run: |
+          PKI=cmd/kubeadm/app/util/pkiutil/pki_helpers.go
+          echo "=== Patch: ${PKI} ==="
+          echo "--- before ---"
+          grep -n "notAfter = cfg.NotAfter" "${PKI}"
+          sed -i "s#notAfter = cfg.NotAfter#//notAfter = cfg.NotAfter#" "${PKI}"
+          echo "--- after ---"
+          grep -n "notAfter = cfg.NotAfter" "${PKI}"
       - name: Install build dependencies
         run: |
           apt-get update
@@ -70,7 +81,7 @@ jobs:
       - name: Build
         working-directory: kubernetes
         env:
-          KUBE_BUILD_PLATFORMS: "linux/amd64 linux/arm linux/arm64 linux/ppc64le linux/s390x"
+          KUBE_BUILD_PLATFORMS: "linux/amd64 linux/arm64 linux/ppc64le linux/s390x"
         run: make all WHAT=cmd/kubeadm
       - name: List Binaries
         run: find kubernetes/_output/local/bin
@@ -82,7 +93,6 @@ jobs:
             kubernetes/_output/local/bin/linux/s390x/kubeadm
             kubernetes/_output/local/bin/linux/ppc64le/kubeadm
             kubernetes/_output/local/bin/linux/arm64/kubeadm
-            kubernetes/_output/local/bin/linux/arm/kubeadm
             kubernetes/_output/local/bin/linux/amd64/kubeadm
       - name: Extract stable version
         if: github.ref_type == 'tag'
@@ -101,7 +111,6 @@ jobs:
         run: |
           mkdir -p release
           cp kubernetes/_output/local/bin/linux/amd64/kubeadm   release/kubeadm-amd64
-          cp kubernetes/_output/local/bin/linux/arm/kubeadm     release/kubeadm-arm
           cp kubernetes/_output/local/bin/linux/arm64/kubeadm   release/kubeadm-arm64
           cp kubernetes/_output/local/bin/linux/ppc64le/kubeadm release/kubeadm-ppc64le
           cp kubernetes/_output/local/bin/linux/s390x/kubeadm   release/kubeadm-s390x
@@ -119,7 +128,6 @@ jobs:
           | Platform        | File                                                       |
           |-----------------|------------------------------------------------------------|
           | `linux/amd64`   | [`kubeadm-amd64`](${{ env.BASE_URL }}/kubeadm-amd64)       |
-          | `linux/arm`     | [`kubeadm-arm`](${{ env.BASE_URL }}/kubeadm-arm)           |
           | `linux/arm64`   | [`kubeadm-arm64`](${{ env.BASE_URL }}/kubeadm-arm64)       |
           | `linux/ppc64le` | [`kubeadm-ppc64le`](${{ env.BASE_URL }}/kubeadm-ppc64le)   |
           | `linux/s390x`   | [`kubeadm-s390x`](${{ env.BASE_URL }}/kubeadm-s390x)       |
@@ -127,7 +135,7 @@ jobs:
           ## Installing
 
           ```shell
-          # Replace amd64 with arm, arm64, ppc64le or s390x as needed
+          # Replace amd64 with arm64, ppc64le or s390x as needed
           curl -LO ${{ env.BASE_URL }}/kubeadm-amd64
           chmod +x kubeadm-amd64
           sudo install -m 0755 kubeadm-amd64 /usr/local/bin/kubeadm
