@@ -157,3 +157,7 @@ gh workflow run build.yml --ref release-v1.37.0     # trigger one tag without re
 scripts/download-releases.sh   bulk release downloader (SHA-256 verification, proxy support)
 skills/                        commit conventions used by this repository (DCO, Gitmoji)
 ```
+
+## Friend links
+
+- [LINUX DO](https://linux.do/) — An open and friendly Chinese-language tech community focused on Linux, open source, development, and discussions on emerging technologies.

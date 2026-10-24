@@ -152,3 +152,7 @@ gh workflow run build.yml --ref release-v1.37.0     # 不重推标签，直接�
 scripts/download-releases.sh   批量下载 Release 产物（SHA-256 校验、支持代理）
 skills/                        本仓库使用的提交规范（DCO、Gitmoji）
 ```
+
+## 友情链接
+
+- [LINUX DO](https://linux.do/) —— 一个开放、友好的中文技术交流社区，聚焦 Linux、开源、开发与前沿技术讨论。
